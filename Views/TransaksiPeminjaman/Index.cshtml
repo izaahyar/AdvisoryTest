@@ -1,0 +1,139 @@
+﻿
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Transaksi Peminjaman";
+}
+
+
+<div class="panel panel-flat">
+    <div class="panel-body">
+        <button type="button" class="btn bg-success btn-labeled" data-toggle="modal" data-target="#modal-tambah" onclick="CreateEdit(0);"><b><i class="icon-plus-circle2"></i></b> Tambah</button>
+    </div>
+    <br />
+    <table class="table" id="tbl_data">
+        <thead>
+            <tr>
+                <th class="text-center" width="5%">No</th>
+                <th class="text-center">Peminjam</th>
+                <th class="text-center">Tanggal Pinjam</th>
+                <th class="text-center">Tanggal Pengembalian</th>
+                <th class="text-center">Total Biaya</th>
+                <th class="text-center" width="10%">Aksi</th>
+            </tr>
+        </thead>
+
+    </table>
+</div>
+
+<div id="modal-tambah" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="divModal">
+
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        var tbl_trans;
+        jQuery(document).ready(function ($) {
+            tbl_trans = $("#tbl_data").DataTable({
+                serverSide: true,
+                processing: true,
+                autoWidth:false,
+                filter: true,
+                scrollX:true,
+                ajax: {
+	                "url": "@Url.Action("GetListPeminjaman", "TransaksiPeminjaman")",
+                    "type": "POST",
+                    "datatype": "json"
+	            },
+                columns: [
+                    { "data": "no", "name": "no" },
+                    { "data": "peminjam", "name": "peminjam" },
+                    { "data": "tanggalPinjam", "name": "tanggalPinjam" },
+                    { "data": "tanggalPengembalian", "name": "tanggalPengembalian"},
+                    { "data": "totalBiaya", "name": "totalBiaya" },
+                    {
+                        "render": function (data, type, row) {
+                            return "<a href='#' onclick=CreateEdit('" + row.id + "'); title='Edit' data-toggle='modal' data-target='#modal-tambah'><i class='icon-eye'></i></a> <a href='#' onclick=hapus('" + row.id + "'); title='Hapus'><i class='icon-trash text-danger'></i></a>";
+                        }
+                    },
+                ]
+            });
+        })
+
+        function CreateEdit(id)
+        {
+            if(id == 0)
+                url = "@Url.Action("Create", "TransaksiPeminjaman")";
+            else
+                url = "@Url.Action("Edit", "TransaksiPeminjaman")/" + id;
+
+            $.ajax({
+                url: url,
+                type: "GET",
+                success: function(data){
+                    $("#divModal").html(data);
+                },
+                error: function(data){
+                    alert('Hubungi Admin !');
+                }
+            });
+
+        }
+
+        function hapus(id)
+        {
+            swal({
+                title: "Anda yakin?",
+                text: "Hapus data ini",
+                showCancelButton: true,
+                cancelButtonColor: "#c0392b",
+                confirmButtonColor: "#c0392b",
+                confirmButtonText: "Ya",
+                cancelButtonText: 'Batal',
+                animation: true,
+                allowEscapeKey: true,
+                closeOnConfirm: false,
+                showLoaderOnConfirm: true,
+                html: true
+            },
+                function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("Delete", "TransaksiPeminjaman")",
+                            data: {
+                                ID: id
+                            },
+                            traditional: true,
+                            success: function (result) {
+
+                                if (result.isSuccess) {
+                                    swal(result.message, "Click ok to proceed", "success");
+                                    tbl_trans.ajax.reload();
+                                } else {
+                                    swal({
+                                        title: "Something Wrong",
+                                        text: result.message,
+                                        type: "error"
+                                    });
+                                }
+                            },
+                            error: function (result) {
+                                swal({
+                                    title: "Error",
+                                    text: result.message,
+                                    type: "error"
+                                });
+                            }
+                        });
+                    }
+                });
+        }
+
+
+    </script>
+}

@@ -1,0 +1,143 @@
+﻿
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Buku";
+}
+
+<div class="panel panel-flat">
+    <div class="panel-body">
+        <button type="button" class="btn bg-success btn-labeled" data-toggle="modal" data-target="#modal-tambah" onclick="CreateEdit(0);"><b><i class="icon-plus-circle2"></i></b> Tambah</button>
+    </div>
+    <br />
+    <table class="table" id="tbl_data">
+        <thead>
+            <tr>
+                <th class="text-center" width="5%">No</th>
+                <th class="text-center">Judul</th>
+                <th class="text-center">Pengarang</th>
+                <th class="text-center">Penerbit</th>
+                <th class="text-center">Tahun</th>
+                <th class="text-center">Stok</th>
+                <th class="text-center">Harga/Hari</th>
+                <th class="text-center" width="10%">Aksi</th>
+            </tr>
+        </thead>
+
+    </table>
+</div>
+
+<div id="modal-tambah" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="divModal">
+
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        var tbl_buku;
+        jQuery(document).ready(function ($) {
+            tbl_buku = $("#tbl_data").DataTable({
+                serverSide: true,
+                processing: true,
+                autoWidth:false,
+                filter: true,
+                scrollX:true,
+                ajax: {
+	                "url": "@Url.Action("List","Buku")",
+                    "type": "POST",
+                    "datatype": "json"
+	            },
+                columns: [
+                    { "data": "no", "name": "no" },
+                    { "data": "judul", "name": "judul" },
+                    { "data": "pengarang", "name": "pengarang" },
+                    { "data": "penerbit", "name": "penerbit"},
+                    { "data": "tahun", "name": "tahun" },
+                    { "data": "stok", "name": "stok" },
+                    { "data": "harga", "name": "harga" },
+                    {
+                        "render": function (data, type, row) {
+                            return "<a href='#' onclick=CreateEdit('" + row.id + "'); title='Edit' data-toggle='modal' data-target='#modal-tambah'><i class='icon-pencil7'></i></a> <a href='#' onclick=hapus('" + row.id + "'); title='Hapus'><i class='icon-trash text-danger'></i></a>";
+                        }
+                    },
+                ]
+            });
+        })
+
+        function CreateEdit(id)
+        {
+            if(id == 0)
+                url = "@Url.Action("Create","Buku")";
+            else
+                url = "@Url.Action("Edit", "Buku")/" + id;
+
+            $.ajax({
+                url: url,
+                type: "GET",
+                success: function(data){
+                    $("#divModal").html(data);
+                },
+                error: function(data){
+                    alert('Hubungi Admin !');
+                }
+            });
+        }
+
+        function hapus(id)
+        {
+            swal({
+                title: "Anda yakin?",
+                text: "Hapus data ini",
+                showCancelButton: true,
+                cancelButtonColor: "#c0392b",
+                confirmButtonColor: "#c0392b",
+                confirmButtonText: "Ya",
+                cancelButtonText: 'Batal',
+                animation: true,
+                allowEscapeKey: true,
+                closeOnConfirm: false,
+                showLoaderOnConfirm: true,
+                html: true
+            },
+                function (isConfirm) {
+                    if (isConfirm) {
+                        $.ajax({
+                            type: "POST",
+                            url: "@Url.Action("Delete", "Buku")",
+                            data: {
+                                ID: id
+                            },
+                            traditional: true,
+                            success: function (result) {
+
+                                if (result.isSuccess) {
+                                    swal(result.message, "Click ok to proceed", "success");
+                                    tbl_buku.ajax.reload();
+                                } else {
+                                    swal({
+                                        title: "Something Wrong",
+                                        text: result.message,
+                                        type: "error"
+                                    });
+                                }
+                            },
+                            error: function (result) {
+                                swal({
+                                    title: "Error",
+                                    text: result.message,
+                                    type: "error"
+                                });
+                            }
+                        });
+                    }
+                });
+        }
+
+
+    </script>
+}
+
+

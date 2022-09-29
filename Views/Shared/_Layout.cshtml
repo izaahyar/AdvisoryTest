@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AdvisoryTest</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link href="~/css/icons/icomoon/styles.css" rel="stylesheet" type="text/css">
+    <link href="~/css/sweetalert.css" rel="stylesheet" />
+    @*<link href="~/bootstrap-datepicker/sweetalert.css" rel="stylesheet" />*@
+    @RenderSection("Css", required: false)
+    <script type="text/javascript" src="~/js/plugins/loaders/pace.min.js"></script>
+    <script type="text/javascript" src="~/js/core/libraries/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
+
+    <script type="text/javascript" src="~/js/plugins/tables/datatables/datatables.min.js"></script>
+    <script type="text/javascript" src="~/js/plugins/tables/datatables/extensions/fixed_columns.min.js"></script>
+    <script type="text/javascript" src="~/js/plugins/forms/validation/validate.min.js"></script>
+    <script type="text/javascript" src="~/js/core/libraries/jquery_ui/interactions.min.js"></script>
+    <script type="text/javascript" src="~/js/plugins/forms/selects/select2.min.js"></script>
+    <script type="text/javascript" src="~/js/pages/form_select2.js"></script>
+    <script type="text/javascript" src="~/js/plugins/forms/styling/uniform.min.js"></script>
+
+    <!-- Date picker -->
+    <script src="~/assets/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+    <!-- /date picker -->
+
+    <script src="~/js/jquery.sweet-alert.init.js"></script>
+    <script src="~/js/sweetalert-dev.js"></script>
+    <style>
+        .dataTables_processing {
+            z-index: 3000;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">AdvisoryTest</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+                    <partial name="_LoginPartial" />
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Buku" asp-action="Index">Master Data Buku</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="TransaksiPeminjaman" asp-action="Index">Transaksi Peminjaman</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="LaporanPeminjaman" asp-action="Index">Laporan Peminjaman</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <partial name="_CookieConsentPartial" />
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2022 - AdvisoryTest - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    @*<environment include="Development">
+            <script src="~/lib/jquery/dist/jquery.js"></script>
+            <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
+        </environment>*@
+    <script>
+        $(document).ready(function () {
+            /*$('.mask-rupiah').mask('#.##0', { reverse: true });*/
+        });
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

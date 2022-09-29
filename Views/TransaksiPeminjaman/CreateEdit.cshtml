@@ -1,0 +1,443 @@
+﻿@model AdvisoryTest.ViewModel.TransaksiPeminjaman.CreateEditViewModel
+
+<div class="modal-header">
+    <h6 class="text-left">Tambah/Edit Pinjam Buku</h6>
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+    <span aria-hidden="true">&times;</span></button>
+</div>
+
+
+<form id="frmCreateEdit" class="form-horizontal form-validate-jquery">
+    <div class="modal-body">
+        @Html.HiddenFor(e => e.ID)
+        <div class="row" id="groupheader" style="display:none">
+            <div class="col-md-8">
+                <label>Judul</label>
+                <div class=" form-group">
+                    <select class="form-control select2" id="Buku" name="Buku" asp-for="Buku">
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label>Stok</label>
+                <div class=" form-group">
+                    @Html.TextBoxFor(e => e.Stok, new { @class = "form-control", @readonly = "readonly" })
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-9">
+                <button type="button" class="btn btn-primary" id="btnAddBuku">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <table id="tblSelectedBook" class="table table-bordered table-hover" width="100%">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="text-center" width="5%">No</th>
+                            <th class="text-center">Nama Buku</th>
+                            <th class="text-center">Harga</th>
+                            <th class="text-center" width="10%">Aksi</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+
+        <div class="row" id="rowBottom">
+            <div class="col-md-6">
+                <label>Tanggal Pengembalian</label>
+                <div class="input-group date" data-target-input="nearest">
+                    @Html.TextBoxFor(e => e.TanggalPengembalian, new { @class = "form-control" })
+                    <div class="input-group-append" data-target="#TanggalPengembalian" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Total Biaya Peminjaman</label>
+                <div class=" form-group">
+                    @Html.TextBoxFor(e => e.TotalBiayaPinjaman, new { @class = "form-control", @readonly = "readonly" })
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-9">
+                <button type="button" class="btn btn-primary" id="btnCalculate">
+                    <i class="fas fa-calculator"></i> Calculate
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btnSaveMdlPeminjaman">
+            <i class="fas fa-save"></i> Simpan
+        </button>
+    </div>
+</form>
+
+<script>
+    DataBookSelected = [];
+    $(document).ready(function () {
+        Init();
+        InitEvent();
+    });
+    function Init() {
+        BindListBook("#Buku");
+        $('#TanggalPengembalian').val(formatDate(Date.now()))
+        $('#TanggalPengembalian').datepicker({
+            format: 'yyyy/mm/dd'
+        });
+    }
+    function InitEvent() {
+        $('#Buku').change(function () {
+            $("#Stok").val($("#Buku" + " option:selected").text().split("Stok")[1].split("-")[0].trim());
+        });
+
+        $("#btnAddBuku").unbind().click(function () {
+            var book = $("#Buku").val();
+            var stock = $("#Stok").val();
+
+            if (book == "") {
+                swal({
+                    title: "Something Wrong",
+                    text: "Please select book",
+                    type: "warning"
+                });
+            }
+            else if (parseFloat(stock) == 0) {
+                swal({
+                    title: "Something Wrong",
+                    text: "Stok habis !",
+                    type: "warning"
+                });
+            }
+            else {
+                var DataRows = {};
+                if (DataBookSelected.length == 0)
+                    DataRows.id = 1;
+                else
+                    DataRows.id = Math.max.apply(Math, DataBookSelected.map(function (o) { return o.id; })) + 1;
+
+                DataRows.bukuID = $("#Buku" + " option:selected").val();
+                DataRows.judul = $("#Buku" + " option:selected").text().split("-")[0].trim();
+                DataRows.harga = $("#Buku" + " option:selected").text().split("Rp.")[1].trim();
+                DataBookSelected.push(DataRows);
+
+                $("#Stok").val(parseFloat(stock) - 1);
+
+            }
+            BindBookSelected();
+
+        });
+
+        $("#btnCalculate").unbind().click(function () {
+            if (DataBookSelected.length === 0) {
+                swal({
+                    title: "Something Wrong",
+                    text: "Tabel pinjaman buku, tidak boleh kosong !",
+                    type: "warning"
+                });
+            }
+            else if ($("#TanggalPengembalian").val() == "") {
+                swal({
+                    title: "Something Wrong",
+                    text: "Tanggal Pengembalian tidak boleh kosong !",
+                    type: "warning"
+                });
+            }
+            else {
+                var tglPengembalian = new Date($("#TanggalPengembalian").val());
+                var today = new Date();
+                var year = today.getFullYear();
+                var mes = today.getMonth() + 1;
+                var dia = today.getDate();
+                var dateNow = new Date(year + "/" + mes + "/" + dia);
+                if (tglPengembalian < dateNow) {
+                    swal({
+                        title: "Something Wrong",
+                        text: "Tanggal Pengembalian tidak boleh backdate !",
+                        type: "warning"
+                    });
+                }
+                else {
+                    var hargaTotal = 0;
+                    $.each(DataBookSelected, function (i, item) {
+                        if (item.harga != null && item.harga != "") {
+                            hargaTotal = hargaTotal + parseInt(item.harga);
+                        }
+                    })
+
+                    var diffTime = Math.abs(tglPengembalian - dateNow);
+                    var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays == 0)
+                        diffDays = 1;
+
+                    GetCalculate(hargaTotal, diffDays);
+                }
+
+            }
+        });
+
+        $("#groupheader").show();
+
+        $("#btnSaveMdlPeminjaman").unbind().click(function () {
+            var btn = $("#btnSaveMdlPeminjaman");
+            Validate();
+            if (ValidateResult == "success") {
+                    SavePeminjaman();
+            }
+        });
+
+        var id = parseFloat($("#ID").val());
+        if (id > 0) {
+            $("#groupheader").hide();
+            $("#rowBottom").hide();
+            $("#btnCalculate").hide();
+            $("#btnAddBuku").hide();
+            $("#btnSaveMdlPeminjaman").hide();
+            GetListBookSelected(id);
+            
+
+        }
+    }
+    function GetListBookSelected(id) {
+        var model = {
+            ID: id
+        }
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "@Url.Action("GetListBookSelected", "TransaksiPeminjaman")",
+            data: { model },
+            success: function (data) {
+                if (id < 1) {
+                    DataBookSelected = [];
+                    Table.BindBookSelected();
+                }
+                else if (id > 0) {
+                    DataBookSelected = data;
+                    BindBookSelected();
+                }
+
+            },
+            error: function (errormessage) {
+                swal({
+                    title: "Something Wrong",
+                    text: errormessage.responseText,
+                    type: "warning"
+                });
+            },
+        });
+        $('#tblSelectedBook').DataTable().column(3).visible(false);
+    }
+    function BindBookSelected() {
+        $(window).resize(function () {
+            $("#tblSelectedBook").DataTable().columns.adjust().draw();
+        });
+        var t = $("#tblSelectedBook").DataTable({
+            "serverSide": false,
+            "destroy": true,
+            "async": false,
+            "filter": true,
+            "lengthMenu": [[10, 25, 50, 100, -1], ['10', '25', '50', '100', 'ALL']],
+            "ordering": false,
+            "data": DataBookSelected,
+            "columns": [
+                { data: null, orderable: false, className: "text-center" },
+                { data: "judul", className: "text-left" },
+                { data: "harga", orderable: false, render: $.fn.dataTable.render.number('.', ',', 2, ''), className: "text-center" },
+                {
+                    filter: false,
+                    className: "text-center",
+                    mRender: function (data, type, full) {
+                        var strReturn = "";
+                        strReturn += "<a type='button' href='#' class = 'btDelete' title='Delete'><i class='icon-trash text-danger' style='color:red'></i></a>";
+
+                        return strReturn;
+                    }
+                },
+
+            ],
+
+            "columnDefs": [{}],
+            "order": [],
+            "initComplete": function () {
+                var api = this.api();
+                var id = parseFloat($("#ID").val());
+                debugger
+                if (id > 0) {
+                    api.column(3).visible(false)
+                }
+
+            }
+
+        });
+        t.on('order.dt search.dt', function () {
+            t.column(0, { search: 'applied', order: 'applied' }).nodes().each(function (cell, i) {
+                cell.innerHTML = i + 1;
+            });
+        }).draw();
+
+        $("#tblSelectedBook").on("click", ".btDelete", function (e) {
+            e.preventDefault();
+            var table = $("#tblSelectedBook").DataTable();
+            var row = table.row($(this).parents("tr")).data();
+            if (row != null) {
+                        var index = DataBookSelected.findIndex(function (data) {
+                            return data.id == row.id
+                        });
+                        DataBookSelected.splice(index, 1);
+                        table.row($(this).parents('tr')).remove().draw(false);
+
+                        var totalCost = 0;
+                        $.each(DataBookSelected, function (i, item) {
+                            if (item.harga != null && item.harga != "") {
+                                totalCost = totalCost + parseFloat(item.harga);
+
+                            }
+                        })
+                $("#TotalBiayaPinjaman").val(totalCost);
+            }
+        });
+    }
+    function BindListBook(controlID, type) {
+
+        $.ajax({
+            url: "@Url.Action("GetListBook", "TransaksiPeminjaman")",
+            type: "GET",
+            async: false,
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                $(controlID).html("<option></option>")
+                $.each(data, function (i, item) {
+                    $(controlID).append("<option value='" + item.id + "'>" + item.judul + ' - Stok ' + item.stok + ' - Rp.' + item.harga + "</option>");
+                })
+                $(controlID).select2({ placeholder: "Pilih buku", width: null });
+
+
+            },
+            error: function (errormessage) {
+                swal({
+                    title: "Something Wrong",
+                    text: errormessage.responseText,
+                    type: "error"
+                });
+            },
+        });
+    }
+    function GetCalculate(hargaTotal, diffDays) {
+        var model = {
+            Value1: hargaTotal,
+            Value2: diffDays,
+        }
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            async: false,
+            url: "@Url.Action("GetCalculator", "TransaksiPeminjaman")",
+            data: { model },
+            success: function (data) {
+                $("#TotalBiayaPinjaman").val(data.result);
+            },
+            error: function (errormessage) {
+                swal({
+                    title: "Something Wrong",
+                    text: errormessage.responseText,
+                    type: "error"
+                });
+            },
+        });
+    }
+    function Validate() {
+        var result = "";
+        if ($('#Buku').val() == "") {
+            result += "Judul, ";
+        }
+        if ($("#TanggalPengembalian").val() == "") {
+            result += "Tanggal Pengembalian, ";
+        }
+        if ($('#TotalBiayaPinjaman').val() == "") {
+            result += "Total Biaya, ";
+        }
+
+        if (result != "") {
+            swal({
+                title: "Something Wrong",
+                text: result + "can not be empty",
+                type: "warning"
+            });
+            ValidateResult = "failed";
+        } else {
+            ValidateResult = "success";
+        }
+    }
+    function SavePeminjaman() {
+
+        Validate();
+        if (ValidateResult == "success") {
+            var model = {
+                TotalBiayaPinjaman: $("#TotalBiayaPinjaman").val(),
+                TanggalPengembalian: $("#TanggalPengembalian").val(),
+                ListData: DataBookSelected,
+            }
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                async: false,
+                url:  "@Url.Action("SavePeminjaman", "TransaksiPeminjaman")",
+                data: { model },
+                success: function (result) {
+                    if (result.isSuccess) {
+                        swal(result.message, "Click ok to proceed", "success");
+                        tbl_trans.ajax.reload();
+                        $("#modal-tambah").modal('hide');
+                        Reset();
+                    }
+                    else {
+                        swal({
+                            title: "Something Wrong",
+                            text: data.message,
+                            type: "error"
+                        });
+                    }
+
+                },
+                error: function (errormessage) {
+                    swal({
+                        title: "Something Wrong",
+                        text: errormessage,
+                        type: "error"
+                    });
+                },
+            });
+        }
+        else {
+            swal({
+                title: "Something Wrong",
+                text: "Failed",
+                type: "error"
+            });
+        }
+    }
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [year, month, day].join('/');
+    }
+</script>
